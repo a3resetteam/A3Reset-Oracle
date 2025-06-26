@@ -1,1 +1,95 @@
+import React, { useState } from 'react';
 
+function Register() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async () => {
+    setLoading(true);
+    // Optionally, register the user in your DB here before Stripe
+    const res = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }), // Optionally send email to backend
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url; // Redirect to Stripe
+    } else {
+      alert("Failed to create checkout session");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="register-container">
+      <h2>Sign Up for 3-Day Free Trial</h2>
+      <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+      <button onClick={handleRegister} disabled={loading}>
+        {loading ? "Redirecting..." : "Start Free Trial"}
+      </button>
+    </div>
+  );
+}
+
+export default Register;
+import React from 'react';
+import './dashboard.css';
+
+function Dashboard() {
+  return (
+    <div className="dashboard-root">
+      <h1>Welcome to The Oracle</h1>
+      <div className="modes">
+        <div className="mode alpha">Alpha Elite Mode</div>
+        <div className="mode siutaionship">Siutaionship Mode</div>
+        <div className="mode personality">Personality Mode</div>
+        <div className="mode ritual">Customer Ritual Creator</div>
+      </div>
+      {/* Add navigation or actions for each mode */}
+    </div>
+  );
+}
+
+export default Dashboard;
+.dashboard-root {
+  background: linear-gradient(135deg, #000 90%, #ccc 100%);
+  color: #fff;
+  min-height: 100vh;
+  padding: 2rem;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+h1 {
+  color: #fff;
+  text-shadow: 0 0 12px #ccc, 0 0 2px #fff;
+}
+.modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-top: 2rem;
+  justify-content: center;
+}
+.mode {
+  border: 2px solid #fff;
+  border-radius: 15px;
+  padding: 2rem 3rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #111 70%, #e5e5e5 100%);
+  box-shadow: 0 0 20px #bfc9ca, 0 0 4px #fff;
+  color: #fff;
+  min-width: 220px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.mode:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 25px #bfc9ca, 0 0 8px #fff;
+}
+.alpha { border-color: #bfc9ca; }
+.siutaionship { border-color: #fff; }
+.personality { border-color: #d4af37; }
+.ritual { border-color: #e5e5e5; }

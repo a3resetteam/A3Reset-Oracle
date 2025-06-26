@@ -1,1 +1,46 @@
+const express = require('express');
+const User = require('../models/User');
+const Stripe = require('stripe');
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
+const router = express.Router();
+
+// This route should be set as the Stripe webhook endpoint in your Stripe dashboard
+router.post('/', express.raw({type: 'application/json'}), async (req, res) => {
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      req.headers['stripe-signature'],
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    return res.status(400).send(`Webhook error: ${err.message}`);
+  }
+
+  // Listen for subscription creation, trial start, or payment success
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    // session.customer_email is only present if using Stripe Checkout API (not Payment Links)
+    // For Payment Links, use customer.created or invoice.paid events and match by email if possible
+    if (session.customer_email) {
+      await User.findOneAndUpdate(
+        { email: session.customer_email },
+        { $set: { status: 'active', stripeCustomerId: session.customer } }
+      );
+    }
+  }
+  if (event.type === 'customer.subscription.created' || event.type === 'invoice.paid') {
+    // Fallback: find by Stripe customer ID if you have it
+    const subscription = event.data.object;
+    const stripeCustomerId = subscription.customer;
+    await User.findOneAndUpdate(
+      { stripeCustomerId },
+      { $set: { status: 'active' } }
+    );
+  }
+
+  res.json({ received: true });
+});
+
+module.exports = router;
